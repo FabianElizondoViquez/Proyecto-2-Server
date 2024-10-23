@@ -31,10 +31,20 @@ namespace ApiInterface
                     var response = ProcessRequest(requestObject);
                     SendResponse(response, handler);
                 }
+                catch (InvalidRequestException ex)
+                {
+                    Console.WriteLine($"Invalid request: {ex.Message}");
+                    await SendErrorResponse("Invalid request format", handler);
+                }
+                catch (UnknowRequestTypeException ex)
+                {
+                    Console.WriteLine($"Unknown request type: {ex.Message}");
+                    await SendErrorResponse("Unknown request type", handler);
+                }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
-                    await SendErrorResponse("Unknown exception", handler);
+                    Console.WriteLine($"Unexpected error: {ex.Message}");
+                    await SendErrorResponse("Unexpected server error", handler);
                 }
                 finally
                 {
@@ -72,11 +82,20 @@ namespace ApiInterface
             }
         }
 
-        private static Task SendErrorResponse(string reason, Socket handler)
+        private static async Task SendErrorResponse(string reason, Socket handler)
         {
-            throw new NotImplementedException();
-        }
+            var errorResponse = new Response
+            {
+                Status = OperationStatus.Error,
+                Request = null,
+                ResponseBody = reason
+            };
 
-        
+            using (NetworkStream stream = new NetworkStream(handler))
+            using (StreamWriter writer = new StreamWriter(stream))
+            {
+                await writer.WriteLineAsync(JsonSerializer.Serialize(errorResponse));
+            }
+        }
     }
 }

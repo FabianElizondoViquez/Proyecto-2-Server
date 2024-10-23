@@ -2,7 +2,9 @@ param (
     [Parameter(Mandatory = $true)]
     [string]$IP,
     [Parameter(Mandatory = $true)]
-    [int]$Port
+    [int]$Port,
+    [Parameter(Mandatory = $true)]
+    [string]$QueryFile
 )
 
 $ipEndPoint = [System.Net.IPEndPoint]::new([System.Net.IPAddress]::Parse($IP), $Port)
@@ -34,7 +36,12 @@ function Receive-Message {
     $stream = New-Object System.Net.Sockets.NetworkStream($client)
     $reader = New-Object System.IO.StreamReader($stream)
     try {
-        return $null -ne $reader.ReadLine ? $reader.ReadLine() : ""
+        $line = $reader.ReadLine()
+        if ($null -ne $line) {
+            return $line
+        } else {
+            return ""
+        }
     }
     finally {
         $reader.Close()
@@ -52,40 +59,30 @@ function Execute-MyQuery {
         [string]$IP
     )
 
-    # Leer el contenido del archivo de consulta y dividir por punto y coma
     $queries = Get-Content -Path $QueryFile -Raw -ErrorAction Stop
     $queryList = $queries -split ';'
 
-    # Configurar el punto de conexión
     $ipEndPoint = [System.Net.IPEndPoint]::new([System.Net.IPAddress]::Parse($IP), $Port)
 
-    # Procesar cada consulta en el archivo
     foreach ($query in $queryList) {
         $query = $query.Trim()
         if ($query -ne "") {
-            # Crear un cliente de socket
             $client = New-Object System.Net.Sockets.Socket($ipEndPoint.AddressFamily, [System.Net.Sockets.SocketType]::Stream, [System.Net.Sockets.ProtocolType]::Tcp)
             $client.Connect($ipEndPoint)
 
-            # Crear el objeto de solicitud
             $requestObject = [PSCustomObject]@{
-                RequestType = 0;  # Asumiendo que 0 es para SQLSentence
+                RequestType = 0; 
                 RequestBody = $query
             }
 
-            # Convertir el objeto de solicitud a JSON
             $jsonMessage = ConvertTo-Json -InputObject $requestObject -Compress
 
-            # Enviar el mensaje
             Send-Message -client $client -message $jsonMessage
 
-            # Recibir la respuesta
             $response = Receive-Message -client $client
 
-            # Convertir la respuesta de JSON a objeto
             $responseObject = ConvertFrom-Json -InputObject $response
 
-            # Verificar si es una sentencia SET DATABASE y actualizar el contexto
             if ($query.StartsWith("SET DATABASE")) {
                 if ($responseObject.Status -eq "Success") {
                     $currentDatabase = $query.Substring("SET DATABASE".Length).Trim()
@@ -94,11 +91,9 @@ function Execute-MyQuery {
                     Write-Host "Failed to set database context: $($responseObject.ResponseBody)" -ForegroundColor Red
                 }
             } else {
-                # Mostrar la respuesta en formato de tabla
                 $responseObject | Format-Table -AutoSize
             }
 
-            # Cerrar el cliente
             $client.Shutdown([System.Net.Sockets.SocketShutdown]::Both)
             $client.Close()
         }
@@ -106,7 +101,8 @@ function Execute-MyQuery {
 }
 
 # Ejemplo de uso
-# Execute-MyQuery -QueryFile ".\Script.tinysql" -Port 8000 -IP "10.0.0.2"
+# . .\tinysqlclient.ps1
+# Execute-MyQuery -QueryFile ".C:\script.tinysql" -Port 8000 -IP "127.0.0.1"
 
 function Send-SQLCommand {
     param (
@@ -132,6 +128,5 @@ function Send-SQLCommand {
     $client.Close()
 }
 
-# This is an example, should not be called here
 Send-SQLCommand -command "CREATE TABLE ESTUDIANTE"
 Send-SQlCommand -command "SELECT * FROM ESTUDIANTE"

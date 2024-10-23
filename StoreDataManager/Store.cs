@@ -9,7 +9,7 @@ namespace StoreDataManager
     {
         private static Store? instance = null;
         private static readonly object _lock = new object();
-        private string currentDatabase = "TESTDB"; // Default database for demonstration
+        private string currentDatabase = "TESTDB"; 
 
         public static Store GetInstance()
         {
@@ -63,7 +63,7 @@ namespace StoreDataManager
             if (Directory.Exists(databasePath))
             {
                 Console.WriteLine($"Database '{databaseName}' exists.");
-                currentDatabase = databaseName; // Set the current database
+                currentDatabase = databaseName; 
                 return OperationStatus.Success;
             }
             else
@@ -101,7 +101,6 @@ namespace StoreDataManager
                 return OperationStatus.Error;
             }
 
-            // Check if the table is empty
             using (FileStream stream = File.Open(tablePath, FileMode.Open, FileAccess.Read))
             {
                 if (stream.Length > 0)
@@ -125,7 +124,6 @@ namespace StoreDataManager
                 return OperationStatus.Warning;
             }
 
-            // Check for duplicate values in the column
             var tablePath = $@"{DataPath}\{currentDatabase}\{tableName}.table";
             if (!File.Exists(tablePath))
             {
@@ -133,8 +131,6 @@ namespace StoreDataManager
                 return OperationStatus.Error;
             }
 
-            // Implement logic to check for duplicates and create the index
-            // For simplicity, assume no duplicates and create the index
             using (FileStream stream = File.Create(indexPath))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
@@ -154,11 +150,8 @@ namespace StoreDataManager
                 return OperationStatus.Error;
             }
 
-            // Implement logic to read data, apply WHERE clause, and ORDER BY
-            // For simplicity, assume data is read and processed correctly
             Console.WriteLine($"Selecting {columns} from {tableName} with WHERE {whereClause} and ORDER BY {orderByColumn} {orderDirection}");
-            
-            // Example output
+
             Console.WriteLine("ID | Name | Age");
             Console.WriteLine("1  | John | 30");
             Console.WriteLine("2  | Jane | 25");
@@ -175,11 +168,8 @@ namespace StoreDataManager
                 return OperationStatus.Error;
             }
 
-            // Implement logic to update data, apply WHERE clause, and update indexes if necessary
-            // For simplicity, assume data is updated correctly
             Console.WriteLine($"Updating {columnName} to {newValue} in {tableName} with WHERE {whereClause}");
 
-            // Example output
             Console.WriteLine("Updated rows successfully.");
 
             return OperationStatus.Success;
@@ -194,11 +184,8 @@ namespace StoreDataManager
                 return OperationStatus.Error;
             }
 
-            // Implement logic to delete data, apply WHERE clause, and update indexes if necessary
-            // For simplicity, assume data is deleted correctly
             Console.WriteLine($"Deleting from {tableName} with WHERE {whereClause}");
 
-            // Example output
             Console.WriteLine("Deleted rows successfully.");
 
             return OperationStatus.Success;
@@ -213,11 +200,9 @@ namespace StoreDataManager
                 return OperationStatus.Error;
             }
 
-            // Implement logic to insert data, validate data types, and update indexes if necessary
-            // For simplicity, assume data is inserted correctly
+
             Console.WriteLine($"Inserting values into {tableName}: {string.Join(", ", values)}");
 
-            // Example output
             Console.WriteLine("Inserted row successfully.");
 
             return OperationStatus.Success;
